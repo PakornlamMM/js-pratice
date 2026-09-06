@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   // RENDER DASHBOARD / TOPIC CARDS
   // =========================================================================
-  function renderDashboard() {
+  function renderDashboard(focusedTopic = null) {
     topicsGrid.innerHTML = "";
 
     Object.entries(TOPIC_METADATA).forEach(([topicId, meta]) => {
@@ -198,9 +198,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const card = document.createElement("div");
       card.className = "topic-card";
+      card.setAttribute("data-topic", topicId);
 
       card.innerHTML = `
-        <div>
+        <div class="topic-card-body" role="button" tabindex="0" title="Start practicing ${meta.name}">
           <div class="topic-card-header">
             <div class="topic-card-icon-title">
               <span class="topic-card-icon">${meta.icon}</span>
@@ -233,9 +234,24 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
+      // Allow clicking topic card body to start topic practice (easy level)
+      const cardBody = card.querySelector(".topic-card-body");
+      if (cardBody) {
+        cardBody.addEventListener("click", () => {
+          router.navigate(router.buildUrl(topicId, "easy", 0));
+        });
+        cardBody.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.navigate(router.buildUrl(topicId, "easy", 0));
+          }
+        });
+      }
+
       // Attach difficulty buttons
       card.querySelectorAll(".diff-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
           const topic = btn.getAttribute("data-topic");
           const diff = btn.getAttribute("data-diff");
           router.navigate(router.buildUrl(topic, diff, 0));
@@ -720,7 +736,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // EVENT LISTENERS
   // =========================================================================
   navBrand.addEventListener("click", () => router.navigate("#/"));
-  btnBackDashboard.addEventListener("click", () => router.navigate("#/"));
+  btnBackDashboard.addEventListener("click", () => {
+    if (state.currentTopic) {
+      router.navigate(`#/topic/${state.currentTopic}`);
+    } else {
+      router.navigate("#/");
+    }
+  });
 
   btnPrevExercise.addEventListener("click", () => {
     if (state.currentExerciseIndex > 0) {
@@ -794,7 +816,11 @@ document.addEventListener("DOMContentLoaded", () => {
     router.navigate(router.buildUrl(state.currentTopic, state.currentDifficulty, 0));
   });
   btnResultsTopics.addEventListener("click", () => {
-    router.navigate("#/");
+    if (state.currentTopic) {
+      router.navigate(`#/topic/${state.currentTopic}`);
+    } else {
+      router.navigate("#/");
+    }
   });
 
   // Mistakes Modal

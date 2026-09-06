@@ -54,8 +54,13 @@ class AppRouter {
 
     const segments = clean.split("/").filter(Boolean);
 
-    // /topic/:topic
-    if (segments[0] === "topic" && segments[1]) {
+    // /topics (alias for root dashboard)
+    if (segments[0] === "topics" && !segments[1]) {
+      return { view: "home", path: "#/" };
+    }
+
+    // /topic/:topic or /topics/:topic
+    if ((segments[0] === "topic" || segments[0] === "topics") && segments[1]) {
       const topic = segments[1].toLowerCase();
       if (!this.validTopics.includes(topic)) {
         return { view: "home", path: "#/", fallback: true };

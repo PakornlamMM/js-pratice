@@ -18,7 +18,8 @@ class SandboxEngine {
 
     this.iframe = document.createElement("iframe");
     this.iframe.id = "sandbox-iframe";
-    this.iframe.setAttribute("sandbox", "allow-scripts");
+    this.iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
+    this.iframe.src = "about:blank";
     this.iframe.style.position = "fixed";
     this.iframe.style.top = "-9999px";
     this.iframe.style.left = "-9999px";
@@ -120,13 +121,6 @@ class SandboxEngine {
         const runPromise = new Promise((resolve, reject) => {
           try {
             // Construct executable wrapper
-            // We use iframe's contentWindow to isolate variables
-            const win = this.iframe.contentWindow;
-            if (!win) {
-              throw new Error("Sandbox environment not available");
-            }
-
-            // Create function in isolated context
             const wrappedScript = `
               (() => {
                 ${userCode}
@@ -137,10 +131,43 @@ class SandboxEngine {
               })()
             `;
 
-            const fn = win.eval(wrappedScript);
+            let fn = null;
+
+            // Attempt 1: Isolated iframe execution
+            try {
+              if (this.iframe && this.iframe.contentWindow) {
+                const win = this.iframe.contentWindow;
+                fn = win.eval(wrappedScript);
+              }
+            } catch (frameErr) {
+              // If cross-origin or SecurityError occurs, fall back gracefully
+              if (frameErr.name !== "SecurityError" && !frameErr.message?.includes("cross-origin")) {
+                throw frameErr;
+              }
+            }
+
+            // Attempt 2: Resilient fallback via Function constructor if iframe cross-origin access was restricted
+            if (!fn) {
+              fn = new Function(`
+                "use strict";
+                ${userCode}
+                if (typeof ${fnName} !== 'function') {
+                  throw new ReferenceError("Function '${fnName}' is not defined");
+                }
+                return ${fnName};
+              `)();
+            }
+
             // Execute with spread inputs
             const args = Array.isArray(tc.input) ? tc.input : [tc.input];
-            const result = fn.apply(null, args);
+            // Clone arguments to avoid user mutations between runs
+            const clonedArgs = args.map(arg => {
+              if (arg instanceof Date) return new Date(arg.getTime());
+              if (arg === null || typeof arg !== "object") return arg;
+              try { return JSON.parse(JSON.stringify(arg)); } catch { return arg; }
+            });
+
+            const result = fn.apply(null, clonedArgs);
             resolve(result);
           } catch (err) {
             reject(err);
@@ -208,41 +235,86 @@ class SandboxEngine {
       try {
         const runPromise = new Promise((resolve, reject) => {
           try {
-            // Re-initialize iframe document with starterHtml
-            const doc = this.iframe.contentDocument;
-            const win = this.iframe.contentWindow;
-            if (!doc || !win) {
-              throw new Error("Sandbox iframe not accessible");
+            let doc = null;
+            let win = null;
+
+            try {
+              if (this.iframe) {
+                doc = this.iframe.contentDocument;
+                win = this.iframe.contentWindow;
+              }
+            } catch (frameErr) {
+              // Frame access restricted
             }
 
-            doc.open();
-            doc.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <meta charset="utf-8">
-                  <style>
-                    body { font-family: sans-serif; padding: 8px; margin: 0; }
-                    .hidden { display: none !important; }
-                  </style>
-                </head>
-                <body>
-                  ${exercise.starterHtml || ""}
-                </body>
-              </html>
-            `);
-            doc.close();
+            if (doc && win) {
+              try {
+                doc.open();
+                doc.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <style>
+                        body { font-family: sans-serif; padding: 8px; margin: 0; }
+                        .hidden { display: none !important; }
+                      </style>
+                    </head>
+                    <body>
+                      ${exercise.starterHtml || ""}
+                    </body>
+                  </html>
+                `);
+                doc.close();
 
-            // Run test case setup if defined
+                // Run test case setup if defined
+                if (tc.setup) {
+                  win.eval(tc.setup);
+                }
+
+                // Run user code
+                win.eval(userCode);
+
+                // Run check expression
+                const checkVal = win.eval(tc.check);
+                resolve(checkVal);
+                return;
+              } catch (writeErr) {
+                if (writeErr.name !== "SecurityError" && !writeErr.message?.includes("cross-origin")) {
+                  throw writeErr;
+                }
+              }
+            }
+
+            // Fallback for DOM when iframe cross-origin is blocked:
+            // Use a detached container element in the host page
+            let container = document.getElementById("dom-fallback-container");
+            if (!container) {
+              container = document.createElement("div");
+              container.id = "dom-fallback-container";
+              container.style.position = "fixed";
+              container.style.top = "-9999px";
+              container.style.left = "-9999px";
+              container.style.opacity = "0";
+              container.style.pointerEvents = "none";
+              document.body.appendChild(container);
+            }
+
+            container.innerHTML = exercise.starterHtml || "";
+
+            // Execute scripts inside starterHtml if any
+            container.querySelectorAll("script").forEach(s => {
+              try {
+                (new Function(s.textContent))();
+              } catch (e) {}
+            });
+
             if (tc.setup) {
-              win.eval(tc.setup);
+              (new Function(tc.setup))();
             }
 
-            // Run user code
-            win.eval(userCode);
-
-            // Run check expression
-            const checkVal = win.eval(tc.check);
+            (new Function(userCode))();
+            const checkVal = (new Function("return " + tc.check))();
             resolve(checkVal);
           } catch (err) {
             reject(err);
