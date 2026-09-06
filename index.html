@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExecJS — Hands-on JavaScript Practice Platform</title>
+  <meta name="description" content="Master core JavaScript through real coding practice: 54 rigorous exercises across 6 topics with 5 test cases each, live sandbox execution, and mastery tracking.">
+
+  <!-- Google Fonts: Plus Jakarta Sans (Interface) & JetBrains Mono (Code/Sandbox) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Favicon (Browser Tab Icon) -->
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- App Shell Header -->
+  <header class="app-header">
+    <div class="header-brand" id="nav-brand">
+      <div class="brand-logo-icon">JS</div>
+      <div class="brand-text">
+        <h1 class="brand-title">ExecJS</h1>
+        <span class="brand-subtitle">Hands-on Practice Sandbox</span>
+      </div>
+    </div>
+
+    <!-- Persistent Global Metrics -->
+    <div class="header-metrics">
+      <div class="metric-chip" title="Active practice streak">
+        <span class="chip-icon">🔥</span>
+        <span class="chip-label">Streak:</span>
+        <strong id="global-streak">0</strong>
+      </div>
+      <div class="metric-chip" title="Overall platform mastery">
+        <span class="chip-icon">⚡</span>
+        <span class="chip-label">Mastery:</span>
+        <strong id="global-mastery">0%</strong>
+        <span class="chip-sub" id="global-count">(0/54)</span>
+      </div>
+      <button class="action-chip" id="btn-open-mistakes" title="View exercises marked incorrect">
+        <span class="chip-icon">⚠️</span>
+        <span class="chip-label">Mistakes</span>
+        <span class="badge-count" id="mistakes-count">0</span>
+      </button>
+      <button class="icon-chip" id="btn-open-settings" title="Settings, Backups, and AI" aria-label="Settings">
+        ⚙️
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main class="app-main">
+
+    <!-- VIEW 1: TOPIC SELECTION / DASHBOARD -->
+    <section id="view-dashboard" class="app-view active">
+      <div class="dashboard-hero">
+        <div class="hero-copy">
+          <h2 class="hero-heading">Real JS coding practice. No multiple-choice.</h2>
+          <p class="hero-desc">
+            Pick a topic to start practicing. Easy levels test isolated concepts, while Medium and Hard levels combine multiple core topics into realistic coding challenges.
+          </p>
+        </div>
+        <div class="dashboard-filter-bar">
+          <div class="global-progress-bar-wrap" title="Platform completion">
+            <div class="global-progress-bar-fill" id="global-progress-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Resume Previous Session Banner -->
+        <div class="resume-session-bar hidden" id="resume-session-bar">
+          <div class="resume-left">
+            <span class="resume-icon">⚡</span>
+            <div class="resume-text">
+              <strong id="resume-exercise-title">Resume Practice</strong>
+              <span id="resume-exercise-meta">Continue where you left off</span>
+            </div>
+          </div>
+          <button class="btn-primary btn-sm" id="btn-resume-session">Continue →</button>
+        </div>
+      </div>
+
+      <!-- 6 Topic Cards Grid -->
+      <div class="topics-grid" id="topics-grid">
+        <!-- Injected dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: EXERCISE WORKSPACE -->
+    <section id="view-exercise" class="app-view">
+      <!-- Enhanced Breadcrumb & Quick Switcher Navigation Bar -->
+      <div class="workspace-top-bar">
+        <div class="nav-breadcrumbs">
+          <button class="nav-back-btn" id="btn-back-dashboard" title="Return to All Topics">← Topics</button>
+          <span class="breadcrumb-sep">/</span>
+          <!-- Direct Topic Switcher Dropdown -->
+          <select id="nav-topic-select" class="nav-select-inline" title="Switch Topic">
+            <option value="if-else">Conditionals</option>
+            <option value="date">Date Object</option>
+            <option value="array">Arrays</option>
+            <option value="object">Objects</option>
+            <option value="error-handling">Error Handling</option>
+            <option value="dom">DOM Manipulation</option>
+          </select>
+          <span class="breadcrumb-sep">/</span>
+          <!-- Direct Difficulty Segmented Toggle -->
+          <div class="diff-segmented-toggle" id="nav-diff-toggle">
+            <button class="segmented-btn active" data-diff="easy">Easy</button>
+            <button class="segmented-btn" data-diff="medium">Medium</button>
+            <button class="segmented-btn" data-diff="hard">Hard</button>
+          </div>
+        </div>
+
+        <!-- Center: Exercise Stepper Wrapper with Scroll Controls & Counter -->
+        <div class="exercise-stepper-wrap">
+          <button class="stepper-nav-btn hidden" id="stepper-scroll-left" title="Scroll left" aria-label="Scroll left">‹</button>
+          <div class="exercise-stepper" id="exercise-stepper" title="Jump directly to any exercise in this set">
+            <!-- Injected dynamically by app.js -->
+          </div>
+          <button class="stepper-nav-btn hidden" id="stepper-scroll-right" title="Scroll right" aria-label="Scroll right">›</button>
+          <span class="stepper-counter" id="stepper-counter" title="Current exercise">1 / 3</span>
+        </div>
+
+        <!-- Right: Step Navigation Controls -->
+        <div class="nav-exercise-controls">
+          <button class="btn-step" id="btn-prev-exercise" title="Previous exercise">← Prev</button>
+          <button class="btn-step" id="btn-next-exercise" title="Next exercise">Next →</button>
+        </div>
+      </div>
+
+      <!-- Split Layout Workspace -->
+      <div class="workspace-split">
+        <!-- Left Pane: Problem Description, Topics, Test Specs, Hints -->
+        <div class="pane-problem">
+          <div class="problem-header">
+            <div class="meta-row">
+              <span class="badge-difficulty" id="exercise-badge-difficulty">Medium</span>
+              <div class="topic-tags" id="exercise-topic-tags"></div>
+              <span class="badge-status" id="exercise-status-badge">Unattempted</span>
+            </div>
+            <h2 class="problem-title" id="exercise-title">Exercise Title</h2>
+          </div>
+
+          <div class="problem-body">
+            <div class="prompt-markdown" id="exercise-prompt"></div>
+
+            <!-- DOM Preview (Only visible for DOM exercises) -->
+            <div class="starter-dom-preview hidden" id="starter-dom-box">
+              <div class="dom-preview-header">
+                <span class="pane-label">Provided HTML Fragment</span>
+              </div>
+              <pre class="dom-html-code"><code id="dom-html-content"></code></pre>
+            </div>
+
+            <!-- Hint & Canonical Explanation -->
+            <div class="collapsible-section">
+              <button class="collapsible-toggle" id="btn-toggle-hint">
+                <span class="toggle-icon">▶</span>
+                <span>Explanation & Hint</span>
+              </button>
+              <div class="collapsible-content hidden" id="hint-content">
+                <p id="exercise-explanation"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Pane: Code Editor, Action Bar, and Test Output -->
+        <div class="pane-editor-workspace">
+          <!-- Editor Toolbar -->
+          <div class="editor-toolbar">
+            <div class="toolbar-left">
+              <span class="pane-label">JavaScript Solution</span>
+              <!-- Real-time Autosave Indicator -->
+              <span class="autosave-pill" id="autosave-status" title="Your written code is automatically saved in your browser">
+                <span class="autosave-dot"></span> Saved
+              </span>
+              <span class="key-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</span>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn-secondary" id="btn-ai-generate-similar" title="Generate a fresh challenge like this using AI">
+                ✨ Generate AI Variant
+              </button>
+              <button class="btn-secondary" id="btn-reset-code" title="Reset to original starter code">
+                Reset Code
+              </button>
+              <button class="btn-primary" id="btn-run-tests">
+                <span class="btn-run-icon">▶</span> Run 5 Tests
+              </button>
+              <button class="btn-primary btn-next-challenge hidden" id="btn-quick-next">
+                Next Challenge →
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Editor Area -->
+          <div class="editor-container">
+            <div class="editor-gutter" id="editor-gutter"></div>
+            <textarea id="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="// Write your JavaScript code here..."></textarea>
+          </div>
+
+          <!-- Test Runner Tray (5 Test Cases Matrix) -->
+          <div class="test-runner-tray">
+            <div class="test-tray-header">
+              <div class="test-tray-title">
+                <span>Test Execution Results</span>
+                <span class="test-score-chip" id="test-score-chip">0 / 5 Passed</span>
+              </div>
+              <div class="test-tray-meta">
+                <span id="test-total-time"></span>
+              </div>
+            </div>
+
+            <div class="test-cases-list" id="test-cases-list">
+              <div class="test-placeholder-msg">
+                Click "Run 5 Tests" or press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to evaluate your solution.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: RESULTS / SUMMARY VIEW -->
+    <section id="view-results" class="app-view">
+      <div class="results-card">
+        <div class="results-icon" id="results-icon">🎉</div>
+        <h2 class="results-heading" id="results-heading">Set Completed!</h2>
+        <p class="results-subheading" id="results-subheading">Here is your performance summary:</p>
+
+        <div class="results-stats-row">
+          <div class="stat-box">
+            <span class="stat-num" id="results-passed-count">3/3</span>
+            <span class="stat-label">Exercises Solved</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="results-test-total">15/15</span>
+            <span class="stat-label">Test Cases Passed</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="results-mastery-diff">+12%</span>
+            <span class="stat-label">Topic Mastery</span>
+          </div>
+        </div>
+
+        <div class="adaptive-callout" id="results-adaptive-callout">
+          <span class="callout-icon">💡</span>
+          <span class="callout-text" id="results-callout-text">Great work! You are ready for the next level.</span>
+        </div>
+
+        <div class="results-actions">
+          <button class="btn-secondary" id="btn-results-replay">Replay (Shuffled)</button>
+          <button class="btn-secondary" id="btn-results-topics">Return to Topics</button>
+          <button class="btn-primary" id="btn-results-next-level">Next Difficulty</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REVIEW MISTAKES DRAWER -->
+  <div class="modal-backdrop hidden" id="modal-mistakes">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Review Mistakes Queue</h3>
+        <button class="btn-modal-close" id="btn-close-mistakes">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Exercises where test cases did not pass on your last attempt. Master them to achieve 100% completion!
+        </p>
+        <div class="mistakes-list" id="mistakes-list-container">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SETTINGS & BACKUP -->
+  <div class="modal-backdrop hidden" id="modal-settings">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Platform Settings & Data</h3>
+        <button class="btn-modal-close" id="btn-close-settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Tabs -->
+        <div class="settings-tabs">
+          <button class="tab-btn active" data-tab="tab-backup">Data & Backup</button>
+          <button class="tab-btn" data-tab="tab-ai">AI Exercise Generator</button>
+        </div>
+
+        <!-- Tab 1: Data Backup & Reset -->
+        <div class="tab-pane active" id="tab-backup">
+          <div class="setting-group">
+            <h4>Export Progress</h4>
+            <p class="setting-desc">Download your full completion state, mastery scores, and streak as a JSON file.</p>
+            <button class="btn-secondary" id="btn-export-json">Export JSON Backup</button>
+          </div>
+
+          <div class="setting-group">
+            <h4>Import Progress</h4>
+            <p class="setting-desc">Restore or sync your practice progress from a previously saved JSON file.</p>
+            <input type="file" id="import-file-input" accept=".json" class="file-input">
+            <button class="btn-secondary" id="btn-import-trigger">Upload JSON File</button>
+            <span id="import-status-msg" class="import-status"></span>
+          </div>
+
+          <div class="setting-group danger-zone">
+            <h4>Reset Progress</h4>
+            <p class="setting-desc">Clear all stored attempts, mistakes, and streaks from localStorage.</p>
+            <button class="btn-danger" id="btn-reset-all-data">Reset All Data</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: AI Configuration -->
+        <div class="tab-pane" id="tab-ai">
+          <div class="setting-group">
+            <h4>AI Generator Setup</h4>
+            <p class="setting-desc">
+              ExecJS includes 54 fully offline static exercises. To generate fresh, endless exercises on demand, connect a backend proxy or your API key.
+            </p>
+
+            <div class="form-field">
+              <label for="ai-endpoint-input">Serverless Proxy Endpoint (Recommended)</label>
+              <input type="url" id="ai-endpoint-input" placeholder="https://your-domain.com/api/generate-exercise" class="form-input">
+              <span class="field-hint">Routes requests securely without exposing keys in frontend code.</span>
+            </div>
+
+            <div class="form-field">
+              <label for="ai-key-input">Direct API Key (Optional / Dev testing)</label>
+              <input type="password" id="ai-key-input" placeholder="sk-... or AIza..." class="form-input">
+              <span class="field-hint">Supports Gemini API or OpenAI compatible endpoints. Stored only in local browser.</span>
+            </div>
+
+            <button class="btn-primary" id="btn-save-ai-config">Save AI Settings</button>
+            <span id="ai-save-feedback" class="feedback-msg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="js/exerciseBank.js"></script>
+  <script src="js/domSandbox.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/adaptiveEngine.js"></script>
+  <script src="js/aiGenerator.js"></script>
+  <script src="js/autocomplete.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
